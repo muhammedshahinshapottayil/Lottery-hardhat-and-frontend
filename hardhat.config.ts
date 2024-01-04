@@ -1,10 +1,10 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "@nomicfoundation/hardhat-verify";
 import "hardhat-deploy";
 import "dotenv/config";
 import "solidity-coverage";
 import "hardhat-gas-reporter";
-
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -17,11 +17,12 @@ const config: HardhatUserConfig = {
       },
     },
     sepolia: {
-      url: process.env.RPC_SERVER,
+      url: process.env.RPC_SERVER!,
       accounts: [process.env.PRIVATE_KEY!],
       chainId: Number(process.env.CHAIN_ID!),
     },
   },
+
   namedAccounts: {
     deployer: {
       default: 0,
@@ -33,6 +34,12 @@ const config: HardhatUserConfig = {
   gasReporter: {
     enabled: true,
     currency: "USD",
+  },
+  etherscan: {
+    apiKey: process.env.ETHER_SCAN_API!,
+  },
+  sourcify: {
+    enabled: true,
   },
 };
 
