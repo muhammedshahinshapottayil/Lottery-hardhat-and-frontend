@@ -50,7 +50,6 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
     int256 private s_Max_Participation_Count;
     Status private s_lottery_status;
     uint256 private noOfWinners;
-    uint256 private lastTimeStamp;
 
     // Events ----------------------------------
     event Evt__Participants__Name(address indexed participantAddress);
@@ -122,11 +121,9 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
     }
 
     function performUpkeep(bytes calldata /* performData */) external override {
-        bool valid = checkUpkeepValidation();
-        if (valid) {
+        // bool valid = checkUpkeepValidation();
+        // if (valid) {
             s_lottery_status = Status.Inactive;
-            lastTimeStamp = block.timestamp;
-
             uint256 requestId = i_VRFV2.requestRandomWords(
                 i_keyHash,
                 s_subscriptionId,
@@ -134,8 +131,8 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
                 i_callbackGasLimit,
                 NUM_WORDS
             );
-            emit Evt__RequestId(requestId);
-        } else revert Validatio__Error__Occured(valid);
+        //     emit Evt__RequestId(requestId);
+        // } else revert Validatio__Error__Occured(valid);
     }
 
     function fulfillRandomWords(
