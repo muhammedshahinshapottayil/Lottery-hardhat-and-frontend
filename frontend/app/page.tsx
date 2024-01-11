@@ -6,7 +6,7 @@ import { NotificationProvider } from "@web3uikit/core";
 
 export default function page() {
   return (
-    <div>
+    <div className="m-2 p-2" >
       <MoralisProvider initializeOnMount={false}>
         <NotificationProvider>
           <Home />

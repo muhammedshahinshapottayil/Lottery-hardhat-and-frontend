@@ -11,6 +11,7 @@ error Doesnt__Match__Required__Eth();
 error Maximum__Contribution__Limits__Five__Try__In__Next__Session();
 error Lottery__Currently__Not__Available();
 error Transaction__Failed(address winner, uint256 balance);
+error Validatio__Error__Occured(bool status);
 
 //  ----------------------------------------
 
@@ -44,7 +45,6 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     // Contract Variables-----------------------
     uint256 private immutable i_ticket_value;
-    uint256 private immutable i_interval;
     uint256 private immutable i_minParticipants;
     MapStruct private s_participants;
     int256 private s_Max_Participation_Count;
@@ -75,7 +75,6 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
         address vrfConsumerBaseV2Address,
         uint64 subscriptionId,
         uint256 participantLimit,
-        uint256 timeInterval,
         bytes32 hashKey,
         uint16 noOfConfirmations,
         uint32 gasLimit
@@ -87,9 +86,7 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
         i_VRFV2 = VRFCoordinatorV2Interface(vrfConsumerBaseV2Address);
         s_lottery_status = Status.Active;
         noOfWinners = 0;
-        lastTimeStamp = block.timestamp;
         i_minParticipants = participantLimit;
-        i_interval = timeInterval;
         i_keyHash = hashKey;
         i_requestConfirmations = noOfConfirmations;
         i_callbackGasLimit = gasLimit;
@@ -112,30 +109,21 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     function checkUpkeep(
         bytes calldata /* checkData */
-    )
-        external
-        view
-        override
-        returns (bool upkeepNeeded, bytes memory /* performData */)
-    {
-        upkeepNeeded = checkUpkeepValidation();
-        return (upkeepNeeded, "0x0");
-    }
+    ) external view override returns (bool, bytes memory /* performData */) {}
 
-    function checkUpkeepValidation() private view returns (bool) {
-        bool timeLimit = (block.timestamp - lastTimeStamp) > i_interval;
+    function checkUpkeepValidation() public view returns (bool) {
         bool hasBalance = address(this).balance > 0;
         bool participantsLimit = s_participants.arrAddress.length >
             i_minParticipants;
-        return (timeLimit &&
-            hasBalance &&
+        bool isValid = (hasBalance &&
             participantsLimit &&
             s_lottery_status == Status.Active);
+        return isValid;
     }
 
     function performUpkeep(bytes calldata /* performData */) external override {
         bool valid = checkUpkeepValidation();
-        if (valid) {
+        if (valid == true) {
             s_lottery_status = Status.Inactive;
             lastTimeStamp = block.timestamp;
 
@@ -147,7 +135,7 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
                 NUM_WORDS
             );
             emit Evt__RequestId(requestId);
-        }
+        } else revert Validatio__Error__Occured(valid);
     }
 
     function fulfillRandomWords(
@@ -161,9 +149,8 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
         uint256 contractPrice = (2 / address(this).balance) * 100;
         uint256 totalBalance = address(this).balance;
         (bool success, ) = winner.call{value: totalBalance - contractPrice}("");
-        if (!success) {
+        if (!success)
             revert Transaction__Failed(winner, totalBalance - contractPrice);
-        }
 
         for (uint i = 0; i < s_participants.arrAddress.length; i++) {
             address participantAddress = s_participants.arrAddress[i];
@@ -181,10 +168,6 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     function getTicketValuePriceInUSD() public view returns (uint256) {
         return i_ticket_value;
-    }
-
-    function calculateEthtoUSD(uint256 weiValue) public view returns (uint256) {
-        return weiValue.getConversionRate(i_priceFeed);
     }
 
     function getParticipantDetails()
