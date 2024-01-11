@@ -123,7 +123,7 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     function performUpkeep(bytes calldata /* performData */) external override {
         bool valid = checkUpkeepValidation();
-        if (valid == true) {
+        if (valid) {
             s_lottery_status = Status.Inactive;
             lastTimeStamp = block.timestamp;
 
