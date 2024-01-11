@@ -121,8 +121,8 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
     }
 
     function performUpkeep(bytes calldata /* performData */) external override {
-        // bool valid = checkUpkeepValidation();
-        // if (valid) {
+        bool valid = checkUpkeepValidation();
+        if (valid) {
             s_lottery_status = Status.Inactive;
             uint256 requestId = i_VRFV2.requestRandomWords(
                 i_keyHash,
@@ -131,8 +131,8 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
                 i_callbackGasLimit,
                 NUM_WORDS
             );
-        //     emit Evt__RequestId(requestId);
-        // } else revert Validatio__Error__Occured(valid);
+            emit Evt__RequestId(requestId);
+        } else revert Validatio__Error__Occured(valid);
     }
 
     function fulfillRandomWords(
