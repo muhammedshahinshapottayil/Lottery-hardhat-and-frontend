@@ -11,18 +11,15 @@ error Doesnt__Match__Required__Eth();
 error Maximum__Contribution__Limits__Five__Try__In__Next__Session();
 error Lottery__Currently__Not__Available();
 error Transaction__Failed(address winner, uint256 balance);
-error Validatio__Error__Occured(bool status);
-
-//  ----------------------------------------
+error Validation__Error__Occured(bool status);
 
 contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
-    // Library----------------------------------
     using PriceCalculator for uint256;
 
     // Interfaces or Types----------------------
     struct valueHolderStruct {
         uint256 value;
-        int count;
+        int256 count;
     }
     struct MapStruct {
         address payable[] arrAddress;
@@ -33,23 +30,20 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
         Inactive
     }
 
-    // State Variable---------------------------
-    // Chainlink Variables----------------------
-    AggregatorV3Interface private immutable i_priceFeed;
-    VRFCoordinatorV2Interface private immutable i_VRFV2;
+    VRFCoordinatorV2Interface private immutable COORDINATOR;
     bytes32 private immutable i_keyHash;
-    uint64 private s_subscriptionId;
-    uint16 private immutable i_requestConfirmations;
     uint32 private immutable i_callbackGasLimit;
-    uint32 private constant NUM_WORDS = 1;
+    uint16 private immutable i_requestConfirmations;
+    uint32 private constant numWords = 1;
 
-    // Contract Variables-----------------------
+    MapStruct private s_participants;
+    uint64 private immutable s_subscriptionId;
+    uint256 private s_Max_Participation_Count;
     uint256 private immutable i_ticket_value;
     uint256 private immutable i_minParticipants;
-    MapStruct private s_participants;
-    int256 private s_Max_Participation_Count;
     Status private s_lottery_status;
     uint256 private noOfWinners;
+    AggregatorV3Interface private immutable i_priceFeed;
 
     // Events ----------------------------------
     event Evt__Participants__Name(address indexed participantAddress);
@@ -68,27 +62,26 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
     }
 
     constructor(
-        uint256 ticketValue,
-        address priceFeedAdress,
-        int256 maxParticipationCount,
-        address vrfConsumerBaseV2Address,
         uint64 subscriptionId,
-        uint256 participantLimit,
-        bytes32 hashKey,
-        uint16 noOfConfirmations,
-        uint32 gasLimit
-    ) VRFConsumerBaseV2(vrfConsumerBaseV2Address) {
-        i_ticket_value = ticketValue;
-        i_priceFeed = AggregatorV3Interface(priceFeedAdress);
-        s_Max_Participation_Count = maxParticipationCount;
+        uint256 max_participation,
+        uint256 ticketValue,
+        uint256 minParticipants,
+        address vrfAddress,
+        address priceFeedAddress,
+        bytes32 keyHash,
+        uint16 requestConfirmations,
+        uint32 cbLimit
+    ) VRFConsumerBaseV2(vrfAddress) {
+        COORDINATOR = VRFCoordinatorV2Interface(vrfAddress);
         s_subscriptionId = subscriptionId;
-        i_VRFV2 = VRFCoordinatorV2Interface(vrfConsumerBaseV2Address);
+        s_Max_Participation_Count = max_participation;
+        i_ticket_value = ticketValue;
+        i_minParticipants = minParticipants;
         s_lottery_status = Status.Active;
-        noOfWinners = 0;
-        i_minParticipants = participantLimit;
-        i_keyHash = hashKey;
-        i_requestConfirmations = noOfConfirmations;
-        i_callbackGasLimit = gasLimit;
+        i_priceFeed = AggregatorV3Interface(priceFeedAddress);
+        i_keyHash = keyHash;
+        i_requestConfirmations = requestConfirmations;
+        i_callbackGasLimit = cbLimit;
     }
 
     function enter_Lottery() public payable onlyDuringTossingCountValidation {
@@ -110,7 +103,7 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
         bytes calldata /* checkData */
     ) external view override returns (bool, bytes memory /* performData */) {}
 
-    function checkUpkeepValidation() public view returns (bool) {
+    function checkUpkeepValidation() private view returns (bool) {
         bool hasBalance = address(this).balance > 0;
         bool participantsLimit = s_participants.arrAddress.length >
             i_minParticipants;
@@ -120,19 +113,19 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
         return isValid;
     }
 
-    function performUpkeep(bytes calldata /* performData */) external override {
+    function performUpkeep(bytes calldata) external {
         bool valid = checkUpkeepValidation();
         if (valid) {
             s_lottery_status = Status.Inactive;
-            uint256 requestId = i_VRFV2.requestRandomWords(
+            uint256 requestId = COORDINATOR.requestRandomWords(
                 i_keyHash,
                 s_subscriptionId,
                 i_requestConfirmations,
                 i_callbackGasLimit,
-                NUM_WORDS
+                numWords
             );
             emit Evt__RequestId(requestId);
-        } else revert Validatio__Error__Occured(valid);
+        } else revert Validation__Error__Occured(valid);
     }
 
     function fulfillRandomWords(
@@ -143,13 +136,13 @@ contract Lottery is VRFConsumerBaseV2, AutomationCompatibleInterface {
         uint256 luckyIndex = _randomWords[0] % s_participants.arrAddress.length;
         address payable winner = s_participants.arrAddress[luckyIndex];
         s_lottery_status = Status.Active;
-        uint256 contractPrice = (2 / address(this).balance) * 100;
+        uint256 contractPrice = (2 * address(this).balance) / 100;
         uint256 totalBalance = address(this).balance;
         (bool success, ) = winner.call{value: totalBalance - contractPrice}("");
         if (!success)
             revert Transaction__Failed(winner, totalBalance - contractPrice);
 
-        for (uint i = 0; i < s_participants.arrAddress.length; i++) {
+        for (uint256 i = 0; i < s_participants.arrAddress.length; i++) {
             address participantAddress = s_participants.arrAddress[i];
             s_participants.mapAddress[participantAddress].value = 0;
             s_participants.mapAddress[participantAddress].count = 0;

@@ -109,36 +109,6 @@ export default function Home() {
     });
   };
 
-  const participateInLottery = async () => {
-    setIsTransaction(true);
-    await enterLottery({
-      async onSuccess(results: any) {
-        try {
-          await waitAndSentNotification(results, handleNewNotification);
-          getParticipantsCount();
-          getCurrentContractStatus();
-        } catch (error) {
-          handleNewNotification(
-            "Error While Transaction Being Confirmed",
-            "error",
-            "Transaction Notification"
-          );
-        }
-      },
-      onComplete() {
-        setIsTransaction(false);
-      },
-      onError(error) {
-        handleNewNotification(
-          "Error in Participation Transaction",
-          "error",
-          "Something went wrong"
-        );
-        console.log(error);
-      },
-    });
-  };
-
   const getOnLoadData = async () => {
     await getTicketValuePriceInUSD({
       onSuccess(results: any) {
@@ -170,6 +140,34 @@ export default function Home() {
     await getCurrentContractStatus();
     await getUserParticipantDetails();
   };
+  const participateInLottery = async () => {
+    setIsTransaction(true);
+    await enterLottery({
+      async onSuccess(results: any) {
+        try {
+          await waitAndSentNotification(results, handleNewNotification);
+          await getOnLoadData();
+        } catch (error) {
+          handleNewNotification(
+            "Error While Transaction Being Confirmed",
+            "error",
+            "Transaction Notification"
+          );
+        }
+      },
+      onComplete() {
+        setIsTransaction(false);
+      },
+      onError(error) {
+        handleNewNotification(
+          "Error in Participation Transaction",
+          "error",
+          "Something went wrong"
+        );
+        console.log(error);
+      },
+    });
+  };
   useEffect(() => {
     if (isWeb3Enabled && address) getOnLoadData();
   }, [isWeb3Enabled, address]);
@@ -192,69 +190,114 @@ export default function Home() {
       {isWeb3Enabled ? (
         address ? (
           <div>
-            <div className="container mx-auto p-8 bg-gray-100 rounded-lg shadow-md">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">
+            <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-teal-400 to-blue-500 text-white rounded-lg shadow-md px-4 py-8 md:px-8 md:py-12">
+              <div className="flex flex-col items-center justify-center text-center">
+                <h1 className="text-3xl font-bold mb-4 md:text-4xl">
+                  🎉 <strong>Welcome to the Lottery Smart Contract!</strong> 🎉
+                </h1>
+
+                <p className="text-lg font-semibold mb-5 md:text-xl">
+                  🕒 <strong>Session Duration:</strong> Each lottery session
+                  lasts for 15 minutes.
+                </p>
+                <p className="text-lg font-semibold mb-5 md:text-xl">
+                  💰 <strong>Contract Fee:</strong> A 2% fee will be deducted by
+                  the contract from the total prize pool in each session.
+                </p>
+
+                <p className="text-lg font-semibold mb-5 md:text-xl">
+                  👤 <strong>Participant Limit:</strong> Each person can
+                  participate up to 5 times in a single session.
+                </p>
+                <p className="text-lg font-semibold mb-5 md:text-xl">
+                  Get Ready to Participate and Win Big!
+                </p>
+
+                <p className="text-sm">
+                  <b>
+                    Feel free to reach out if you have any questions. Good luck!
+                  </b>
+                </p>
+              </div>
+
+              <div className="mt-8 md:mt-12 flex flex-col md:flex-row gap-4 justify-center">
+                <div className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center">
+                  <h2 className="text-xl font-semibold mb-2 text-gray-700">
                     Participation Amount in USD
                   </h2>
-                  <p className="text-lg font-medium">{EthInUSD}</p>
+                  <p className="text-lg font-medium text-gray-700">
+                    {EthInUSD}
+                  </p>
                 </div>
 
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">
+                <div className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center">
+                  <h2 className="text-xl font-semibold mb-2 text-gray-700">
                     Participation Amount in WEI
                   </h2>
-                  <p className="text-lg font-medium">{USDInEth}</p>
+                  <p className="text-lg font-medium text-gray-700">
+                    {USDInEth}
+                  </p>
                 </div>
 
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">
+                <div className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center">
+                  <h2 className="text-xl font-semibold mb-2 text-gray-700">
                     Participants Count
                   </h2>
-                  <p className="text-lg font-medium">{ParticipantsCount}</p>
+                  <p className="text-lg font-medium text-gray-700">
+                    {ParticipantsCount}
+                  </p>
                 </div>
 
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">
+                <div className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center">
+                  <h2 className="text-xl font-semibold mb-2 text-gray-700">
                     Previous Winner
                   </h2>
-                  <p className="text-lg font-medium">{PreviousWinner}</p>
+                  <p className="text-lg font-medium text-gray-700">
+                    {PreviousWinner}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-8 md:mt-12 flex flex-col md:flex-row gap-4 justify-center">
+                <div className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center">
+                  <h2 className="text-xl font-semibold mb-2 text-gray-700">
+                    Current Status
+                  </h2>
+                  <p className="text-lg font-medium text-gray-700">
+                    {lotteryStatus === "0"
+                      ? "Active"
+                      : "Session Closed and Waiting to Restart"}
+                  </p>
                 </div>
 
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">Current Status</h2>
-                  <p className="text-lg font-medium">{lotteryStatus}</p>
-                </div>
-
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">
+                <div className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center">
+                  <h2 className="text-xl font-semibold mb-2 text-gray-700">
                     Participation Amount in ETH
                   </h2>
-                  <p className="text-lg font-medium">
+                  <p className="text-lg font-medium text-gray-700">
                     {ethers.utils.formatUnits(BigInt(USDInEth), "ether")}
                   </p>
                 </div>
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">
+
+                <div className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center">
+                  <h2 className="text-xl font-semibold mb-2 text-gray-700">
                     Invested Amount in this session as ETH
                   </h2>
-                  <p className="text-lg font-medium">
+                  <p className="text-lg font-medium text-gray-700">
                     {ethers.utils.formatUnits(
                       BigInt(CurrentDetails.value),
                       "ether"
                     )}
                   </p>
                 </div>
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">
+
+                <div className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center">
+                  <h2 className="text-xl font-semibold mb-2 text-gray-700">
                     Invested Count in this session
                   </h2>
-                  <p className="text-lg font-medium">{CurrentDetails.count}</p>
+                  <p className="text-lg font-medium text-gray-700">
+                    {CurrentDetails.count}
+                  </p>
                 </div>
-              </div>
-
-              <div className="mt-8">
                 <Button
                   theme="moneyPrimary"
                   text="Participate"
@@ -267,10 +310,28 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <h1>Unsupported Network</h1>
+          <div className="flex flex-col items-center justify-center bg-gradient-to-r from-teal-400 to-blue-500 text-white rounded-lg shadow-md p-4 md:p-8">
+            <div>
+              <h1 className="text-3xl font-bold mb-4 md:text-4xl">
+                Unsupported Network
+              </h1>
+              <p className="text-lg font-medium mb-4">
+                This application currently only supports these networks:
+              </p>
+              <ul className="mx-auto my-4 list-none">
+                <li className="mb-2">Sepolia</li>
+              </ul>
+            </div>
+          </div>
         )
       ) : (
-        <h1>Please Connect to Metamask</h1>
+        <div className="flex flex-col items-center justify-center bg-gradient-to-r from-teal-400 to-blue-500 text-white rounded-lg shadow-md p-4 md:p-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-4 md:text-4xl">
+              Please Connect to MetaMask
+            </h1>
+          </div>
+        </div>
       )}
     </div>
   );

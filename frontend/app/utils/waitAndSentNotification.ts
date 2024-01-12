@@ -11,7 +11,7 @@ const waitAndSentNotification = async (
   ) => void
 ) => {
   try {
-    await tx.wait(2);
+    await tx.wait(3);
     handleNewNotification(
       "Successfully Completed",
       "success",
