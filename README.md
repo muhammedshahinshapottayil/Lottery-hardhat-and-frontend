@@ -1,0 +1,1 @@
+"🚀 Lottery - My inaugural Web3 endeavor! Decentralized lottery leveraging Chainlink for price conversion, smart contracts, and VRF for fair winners. Embrace the future of gaming! 🎲 Automated selection, seamlessly integrated through Chainlink. VRF guarantees transparency and impartiality in every draw. Join the revolution and seize your chance to win big! 💰"
